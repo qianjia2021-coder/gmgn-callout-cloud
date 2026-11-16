@@ -1,6 +1,5 @@
 {
- "ts": 0,
+ "ts": 1794819468,
  "host": "win-local",
- "src": "callout_push.py",
- "note": "本机协同未上线前的占位心跳；ts=0 不代表在线"
+ "src": "callout_push.py"
 }
