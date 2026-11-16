@@ -42,6 +42,7 @@
   "robinhood:0x1fa81ddaaac83240803b3f2d20595e40edc1a074:1794819003",
   "robinhood:0x3305761ad2530277fd26d3a4f1b088865f7c86b0:1794823481",
   "robinhood:0x3b215d09376a9fcc6c6ca7d68dc484103c56504d:1794816963",
+  "robinhood:0x4d4195e67d2bc26460d7d15f733d3276cbf93f15:1794831502",
   "robinhood:0x64fb39dad41a00e567c1ece908ccd378bde614eb:1794831432",
   "robinhood:0x71d85b295653d9c3e7dd2fc26f26f2c3db51b2fc:1794831238",
   "robinhood:0x7ad42e78e820b40160a29b7e194453b0c1d614ec:1794825374",
@@ -193,6 +194,7 @@
   "sol:g4tek4oqmkmt7awkamqfgata1sa7ewdkxu1so8fypump:1794825682",
   "sol:g569dawj4hbcmjdxg26ygfidij3wbkbfxswpwrmfpump:1794825924",
   "sol:g9zmir6uh66y7vipkxay7mya9jje4t1yghevumgdpump:1794830265",
+  "sol:gbc91hfd7zh9ktgy6llrqyd4nfbaz1cgirrpshp9pump:1794831528",
   "sol:gcysopnxmmwgrrdqzb3sucmqsnscz7kjrgmguymbpump:1794830729",
   "sol:gmckgy67gg4brej1doinucy4sd2wqftxjadvrbrsf7wd:1794824485",
   "sol:got25oew6j2dny7g5kzcp2jwkezlg76ku5sz6as6pump:1794826613",
@@ -222,5 +224,5 @@
   "sol:wky6tedzj6js1gummnsstrr1bxjqa35s7vhcwhxhnba:1794817661",
   "xlayer:0xa6a3ede375504fee7f1ca957d5883908e7f6eeee:1794827295"
  ],
- "updated": 1794831485
+ "updated": 1794831551
 }
