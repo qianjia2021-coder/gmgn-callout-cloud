@@ -1,0 +1,6 @@
+{
+ "ts": 0,
+ "host": "win-local",
+ "src": "callout_push.py",
+ "note": "本机协同未上线前的占位心跳；ts=0 不代表在线"
+}
