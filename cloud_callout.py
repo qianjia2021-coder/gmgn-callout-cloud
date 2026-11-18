@@ -9,6 +9,8 @@ GMGN 喊单(callout) 云端独立接管实例 —— 与本机 callout_push.py �
   - 本机在线（心跳新鲜）时整轮跳过，不抢 GMGN 限流、不重复推送；
     本机心跳过期后云端才接管。
   - 每合约终身只推一次；本机与云端 pushed 集合双向并集合并。
+  - 推送时机（2026-11-18 用户要求）：同一合约出现「第二条喊单记录」才推送，
+    首条只入账；记录窗口 12 小时。记录表同样双向合并。
   - 不接 dbotx，只推送。
 
 口径（与本机 callout_push.py 一致）：
@@ -28,12 +30,14 @@ Env:
 """
 import asyncio
 import base64
+import hashlib
 import html
 import json
 import os
 import subprocess
 import sys
 import time
+import urllib.request
 
 import requests
 from telethon import TelegramClient
@@ -50,6 +54,10 @@ PAUSED_CHAINS = {x.strip().lower() for x in os.environ.get("PAUSE_CHAINS", "bsc"
 DRY_RUN = os.environ.get("DRY_RUN", "") not in ("", "0", "false", "False")
 SELF_TEST = os.environ.get("SELF_TEST", "") == "1"
 GH_API = "https://api.github.com"
+
+# 推送口径：同一合约必须有第二条喊单记录才推，窗口 12 小时（与本机 callout_push.py 对齐）
+REC_KEEP_HOURS = 12
+REC_MAX = 4000
 
 CHAINS = [
     "sol", "bsc", "eth", "base", "megaeth", "hyperevm", "tron", "monad",
@@ -96,15 +104,101 @@ def read_remote(path):
     return json.loads(base64.b64decode(j["content"]).decode("utf-8")), j["sha"]
 
 
-def merged_state(remote, pushed_extra=()):
-    rp = {str(x).strip().lower() for x in (remote.get("pushed") or [])
-          if isinstance(x, str) and x.strip()}
-    rp |= {str(x).strip().lower() for x in pushed_extra if str(x).strip()}
+# ---------------------------------------------------------------- 记录表工具
+def key_base(key):
+    """键统一为 "链:小写地址[:后缀]"；基键取前两段（链名与地址都不含冒号）。"""
+    return ":".join(str(key).split(":")[:2]).lower()
+
+
+def norm_records(obj):
+    """{"chain:addr": {"s": [记录id...最多2个], "t": 最后喊单秒级时间}}"""
+    out = {}
+    if not isinstance(obj, dict):
+        return out
+    for k, v in obj.items():
+        base = key_base(k)
+        if not base or ":" not in base:
+            continue
+        ids, t = [], 0.0
+        if isinstance(v, dict):
+            raw_ids = v.get("s") or v.get("ids") or []
+            try:
+                t = float(v.get("t") or 0)
+            except (TypeError, ValueError):
+                t = 0.0
+        elif isinstance(v, list):
+            raw_ids = v
+        else:
+            continue
+        for x in raw_ids:
+            x = str(x).strip()
+            if x and x not in ids:
+                ids.append(x)
+            if len(ids) >= 2:
+                break
+        if not ids:
+            continue
+        out[base] = {"s": ids[:2], "t": t}
+    return out
+
+
+def merge_records(a, b):
+    out = norm_records(a)
+    for base, ent in norm_records(b).items():
+        cur = out.get(base)
+        if cur is None:
+            out[base] = {"s": list(ent["s"]), "t": ent["t"]}
+            continue
+        for x in ent["s"]:
+            if x not in cur["s"] and len(cur["s"]) < 2:
+                cur["s"].append(x)
+        cur["t"] = max(cur["t"], ent["t"])
+    return out
+
+
+def prune_records(records, pushed_bases):
+    now = time.time()
+    keep = {}
+    for base, ent in norm_records(records).items():
+        if base in pushed_bases:
+            continue
+        if ent["t"] and now - ent["t"] > REC_KEEP_HOURS * 3600:
+            continue
+        keep[base] = ent
+    if len(keep) > REC_MAX:
+        keep = dict(sorted(keep.items(), key=lambda kv: kv[1]["t"])[-REC_MAX:])
+    return keep
+
+
+def record_id(it):
+    rid = (it.get("ulid") or "").strip()
+    if rid:
+        return rid
+    seed = "{}|{}|{}|{}".format(it.get("symbol") or "", it.get("create_time") or 0,
+                                it.get("thesis_en") or "", it.get("thesis") or "")
+    return "h" + hashlib.md5(seed.encode("utf-8")).hexdigest()[:16]
+
+
+def pushed_base_set(raw):
+    return {key_base(x) for x in (raw or []) if isinstance(x, str) and x.strip()}
+
+
+def merged_state(remote, pushed_extra=(), records_extra=None):
+    """远端最新状态 + 本次新增 pushed + 本次记录表，三合一后写回。"""
+    rp = pushed_base_set((remote or {}).get("pushed"))
+    rp |= {key_base(x) for x in pushed_extra if str(x).strip()}
+
+    recs = norm_records((remote or {}).get("records"))
+    if records_extra:
+        recs = merge_records(recs, records_extra)
+    recs = prune_records(recs, rp)
+
     try:
-        old_updated = int(remote.get("updated") or 0)
+        old_updated = int((remote or {}).get("updated") or 0)
     except (TypeError, ValueError):
         old_updated = 0
-    return {"pushed": sorted(rp), "updated": max(old_updated, int(time.time()))}
+    return {"pushed": sorted(rp), "records": recs,
+            "updated": max(old_updated, int(time.time()))}
 
 
 def write_remote_merged(path, merge, msg, max_attempts=3):
@@ -204,6 +298,8 @@ def fetch_callouts():
         items.append({
             "chain": chain,
             "address": addr,
+            "ulid": t.get("ulid") or "",
+            "create_time": t.get("create_time") or 0,
             "symbol": t.get("token_symbol") or "",
             "thesis": (trans.get("zh_hans") or thesis.get("source_content") or "").strip(),
             "thesis_en": (trans.get("en") or "").strip(),
@@ -310,15 +406,16 @@ async def send_message(msg):
 
 # ---------------------------------------------------------------- 主流程
 def load_state():
+    """返回 {"pushed": set(基键), "records": dict}；读不了返回 None。"""
     try:
         data, _ = read_remote(STATE_PATH)
     except Exception as e:
         log("状态读取失败，按空状态处理：{}".format(type(e).__name__))
         return None
     if not isinstance(data, dict):
-        return set()
-    return {str(x).strip().lower() for x in (data.get("pushed") or [])
-            if isinstance(x, str) and x.strip()}
+        return {"pushed": set(), "records": {}}
+    return {"pushed": pushed_base_set(data.get("pushed")),
+            "records": norm_records(data.get("records"))}
 
 
 def remote_pushed_set():
@@ -329,8 +426,7 @@ def remote_pushed_set():
         return None
     if not isinstance(data, dict):
         return set()
-    return {str(x).strip().lower() for x in (data.get("pushed") or [])
-            if isinstance(x, str) and x.strip()}
+    return pushed_base_set(data.get("pushed"))
 
 
 def main():
@@ -358,16 +454,55 @@ def main():
         log("取数失败：{} {}".format(type(e).__name__, str(e)[:200]))
         return 1
 
-    pushed = load_state()
-    if pushed is None:
+    state = load_state()
+    if state is None:
         log("状态不可读，本轮只记录不推送")
         return 1
 
+    pushed = state["pushed"]
+    recs = state["records"]
+    now = time.time()
+
+    # 1) 本轮所有喊单入账（已推过的合约不再记录），同合约最多留 2 条记录 id
+    changed = False
+    for it in items:
+        base = "{}:{}".format(it["chain"], it["address"].lower())
+        if base in pushed:
+            continue
+        rid = record_id(it)
+        ent = recs.get(base) or {"s": [], "t": 0.0}
+        if rid not in ent["s"] and len(ent["s"]) < 2:
+            ent["s"].append(rid)
+            changed = True
+        ent["t"] = now
+        recs[base] = ent
+
+    # 2) 已有第二条记录、且从未推过 -> 候选；同合约本轮只取一条
+    cands = []
+    for it in items:
+        base = "{}:{}".format(it["chain"], it["address"].lower())
+        if base in pushed:
+            continue
+        if len((recs.get(base) or {}).get("s") or []) >= 2:
+            if all(c[0] != base for c in cands):
+                cands.append((base, it))
+
+    log("本轮 {} 条 | 已推 {} 个 | 待观测 {} 个 | 到第二条 {} 个".format(
+        len(items), len(pushed), len(recs), len(cands)))
+
+    # 3) 记录表先落盘：即使本轮没有候选，下一轮本机掉线换手时也不会丢计数
+    if changed and not DRY_RUN:
+        new_sha = write_remote_merged(
+            STATE_PATH,
+            lambda remote: merged_state(remote, records_extra=recs),
+            "record callout seen [skip ci]")
+        if new_sha is None:
+            log("警告：记录表写入失败，本轮计数可能丢；下一轮会自动补")
+        else:
+            log("记录表已写入（{} 个合约待观测）".format(len(recs)))
+
     rc = 0
-    fresh = [it for it in items
-             if "{}:{}".format(it["chain"], it["address"].lower()) not in pushed]
-    for it in fresh:
-        k = "{}:{}".format(it["chain"], it["address"].lower())
+    for k, it in cands:
         rp = remote_pushed_set()
         if rp is None:
             log("推送前状态复核不可读，本轮停止推送（宁可漏一轮，不可重复推）")
@@ -378,7 +513,7 @@ def main():
 
         msg = build_message(it)
         if DRY_RUN:
-            log("[DRY] 不发送、不写 pushed；将推送：")
+            log("[DRY] 不发送、不写 pushed；将推送「第二次喊单」：")
             print(msg, flush=True)
             continue
         try:
@@ -390,14 +525,15 @@ def main():
 
         new_sha = write_remote_merged(
             STATE_PATH,
-            lambda remote, a=k: merged_state(remote, pushed_extra=(a,)),
+            lambda remote, a="{}:{}".format(k, int(time.time())): merged_state(remote, pushed_extra=(a,)),
             "push callout record [skip ci]")
         if new_sha is None:
             log("严重：消息已发出 msg_id={} 但去重状态未落盘；下一轮可能重复推送，"
                 "请把 {} 人工补进 {} 的 pushed".format(msg_id, k, STATE_PATH))
             return 1
         pushed.add(k)
-        log("TG 推送成功 msg_id={} | {} {} {}".format(
+        recs.pop(k, None)
+        log("TG 推送成功 msg_id={} | {} {} {}（第二次喊单）".format(
             msg_id, it["chain"], it["address"], it["symbol"]))
 
     if DRY_RUN:
