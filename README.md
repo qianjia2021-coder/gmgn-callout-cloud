@@ -34,8 +34,23 @@
 ## 口径
 
 - 全部链；BSC 由环境变量 `PAUSE_CHAINS`（默认 `bsc`）暂停，与本机 `pause_bsc.flag` 对齐。
+- **推送时机**：同一合约出现「第二条喊单记录」才推送，首条只入账不推；
+  记录窗口 12 小时，窗口内没等到第二条就作废。整生命周期仍只推一次。
 - 不接 dbotx，只推送。
 - 消息渲染、链段映射与本机 `callout_push.py` 一致。
+
+## 状态文件结构
+
+```json
+{
+  "pushed":  ["链:小写地址", ...],              // 已推过，终身不再推
+  "records": {"链:小写地址": {"s": ["记录id", ...最多2个], "t": 最后喊单时间戳}},
+  "updated": 时间戳
+}
+```
+
+`records` 只保留未推送的合约；两端（本机 / 云端）双向并集合并，
+同一合约两端各看到一条不同记录时合并后即为「第二次」，可正常触发推送。
 
 ## 手动调试（Actions → Run workflow）
 
@@ -49,5 +64,6 @@
 
 - `callout_push.py` —— 本机推送器
 - `cloud_callout_sync.py` —— 本机云端协同（心跳 + 状态合并）
-- `callout_seen.json` / `callout_hb.json` —— 本机去重与存活信号
+| `callout_seen.json` / `callout_hb.json` —— 本机去重、记录表与存活信号
 - `pause_bsc.flag` —— 本机 BSC 暂停开关
+- `pause_callout_cloud.flag` —— 喊单云端协同的独立暂停开关（存在=暂停协同，默认不存在=常开）
