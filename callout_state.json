@@ -38,6 +38,7 @@
   "elysium:0xec60e2eb9c8f2dddabd55b9799e691beea6da768:1794824802",
   "eth:0x300fd024bef2d2b57c102abd21f0620cb8cf3083:1794817855",
   "eth:0x86aa796cbca08297e11ee8e1713ccffa7b46a2f4:1794818847",
+  "robinhood:0x020bfc650a365f8bb26819deaabf3e21291018b4",
   "robinhood:0x0ce42e197c0023b4cda3ebd3f92704111c568494:1794825270",
   "robinhood:0x15f76862b7de0ba0af017c630c328ce5cffefb8b:1794826053",
   "robinhood:0x18e674231a58c239dc7daedcffe15ec3a24cff5c:1794823011",
@@ -345,5 +346,5 @@
   "sol:wky6tedzj6js1gummnsstrr1bxjqa35s7vhcwhxhnba:1794817661",
   "xlayer:0xa6a3ede375504fee7f1ca957d5883908e7f6eeee:1794827295"
  ],
- "updated": 1794966888
+ "updated": 1794966892
 }
