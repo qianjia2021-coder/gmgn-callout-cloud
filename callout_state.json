@@ -91,6 +91,7 @@
   "eth:0xe33e23106f4667ba5b618c7fa5fbfc21f81544a7",
   "eth:0xeed47eb03a2be37dc103a35bffda92e319e3253a",
   "hyperevm:0xa8ddb5cd96b5222afe198316e9a57caa642850d5",
+  "hyperevm:0xb034b0488d9b9de6c2720c37f138016658a00000",
   "robinhood:0x005f5633a0b3f7b05b5aa9bec8edffb97760b31a",
   "robinhood:0x020bfc650a365f8bb26819deaabf3e21291018b4",
   "robinhood:0x04910982b1b6f2644c086d0f03799c3fff4b9225",
@@ -3147,14 +3148,6 @@
    ],
    "t": 1795094502.929739
   },
-  "hyperevm:0xb034b0488d9b9de6c2720c37f138016658a00000": {
-   "s": [
-    "01M7SZS4GP3FTFBN2JC64FS4TQ",
-    "01M7SZRQ1F86KWZR3TCEHCH71M",
-    "01M7SZQSPEZDW9CNWRFEWXRNJE"
-   ],
-   "t": 1795094812.84704
-  },
   "sol:hwnc1uptjifetxf48vgxlb4hx9vkyp6wijusdli7pump": {
    "s": [
     "01M7SZN666HEPT9H2G0A85Q3JK",
@@ -3196,5 +3189,5 @@
    "t": 1795094812.84704
   }
  },
- "updated": 1795094813
+ "updated": 1795094817
 }
