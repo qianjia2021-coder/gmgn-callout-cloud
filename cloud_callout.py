@@ -9,8 +9,8 @@ GMGN 喊单(callout) 云端独立接管实例 —— 与本机 callout_push.py �
   - 本机在线（心跳新鲜）时整轮跳过，不抢 GMGN 限流、不重复推送；
     本机心跳过期后云端才接管。
   - 每合约终身只推一次；本机与云端 pushed 集合双向并集合并。
-  - 推送时机（2026-11-18 用户要求）：同一合约出现「第二条喊单记录」才推送，
-    首条只入账；记录窗口 12 小时。记录表同样双向合并。
+  - 推送时机（2026-11-19 用户要求）：同一合约出现「第三条不同的喊单记录」才推送，
+    前两条只入账；记录窗口 12 小时。记录表同样双向合并。
   - 不接 dbotx，只推送。
 
 口径（与本机 callout_push.py 一致）：
@@ -55,7 +55,7 @@ DRY_RUN = os.environ.get("DRY_RUN", "") not in ("", "0", "false", "False")
 SELF_TEST = os.environ.get("SELF_TEST", "") == "1"
 GH_API = "https://api.github.com"
 
-# 推送口径：同一合约必须有第二条喊单记录才推，窗口 12 小时（与本机 callout_push.py 对齐）
+# 推送口径：同一合约必须攒够第三条喊单记录才推，窗口 12 小时（与本机 callout_push.py 对齐）
 REC_KEEP_HOURS = 12
 REC_MAX = 4000
 
@@ -111,7 +111,7 @@ def key_base(key):
 
 
 def norm_records(obj):
-    """{"chain:addr": {"s": [记录id...最多2个], "t": 最后喊单秒级时间}}"""
+    """{"chain:addr": {"s": [记录id...最多3个], "t": 最后喊单秒级时间}}"""
     out = {}
     if not isinstance(obj, dict):
         return out
@@ -134,11 +134,11 @@ def norm_records(obj):
             x = str(x).strip()
             if x and x not in ids:
                 ids.append(x)
-            if len(ids) >= 2:
+            if len(ids) >= 3:
                 break
         if not ids:
             continue
-        out[base] = {"s": ids[:2], "t": t}
+        out[base] = {"s": ids[:3], "t": t}
     return out
 
 
@@ -150,7 +150,7 @@ def merge_records(a, b):
             out[base] = {"s": list(ent["s"]), "t": ent["t"]}
             continue
         for x in ent["s"]:
-            if x not in cur["s"] and len(cur["s"]) < 2:
+            if x not in cur["s"] and len(cur["s"]) < 3:
                 cur["s"].append(x)
         cur["t"] = max(cur["t"], ent["t"])
     return out
@@ -463,7 +463,7 @@ def main():
     recs = state["records"]
     now = time.time()
 
-    # 1) 本轮所有喊单入账（已推过的合约不再记录），同合约最多留 2 条记录 id
+    # 1) 本轮所有喊单入账（已推过的合约不再记录），同合约最多留 3 条记录 id
     changed = False
     for it in items:
         base = "{}:{}".format(it["chain"], it["address"].lower())
@@ -471,23 +471,23 @@ def main():
             continue
         rid = record_id(it)
         ent = recs.get(base) or {"s": [], "t": 0.0}
-        if rid not in ent["s"] and len(ent["s"]) < 2:
+        if rid not in ent["s"] and len(ent["s"]) < 3:
             ent["s"].append(rid)
             changed = True
         ent["t"] = now
         recs[base] = ent
 
-    # 2) 已有第二条记录、且从未推过 -> 候选；同合约本轮只取一条
+    # 2) 已攒够三条记录、且从未推过 -> 候选；同合约本轮只取一条
     cands = []
     for it in items:
         base = "{}:{}".format(it["chain"], it["address"].lower())
         if base in pushed:
             continue
-        if len((recs.get(base) or {}).get("s") or []) >= 2:
+        if len((recs.get(base) or {}).get("s") or []) >= 3:
             if all(c[0] != base for c in cands):
                 cands.append((base, it))
 
-    log("本轮 {} 条 | 已推 {} 个 | 待观测 {} 个 | 到第二条 {} 个".format(
+    log("本轮 {} 条 | 已推 {} 个 | 待观测 {} 个 | 到第三条 {} 个".format(
         len(items), len(pushed), len(recs), len(cands)))
 
     # 3) 记录表先落盘：即使本轮没有候选，下一轮本机掉线换手时也不会丢计数
@@ -513,7 +513,7 @@ def main():
 
         msg = build_message(it)
         if DRY_RUN:
-            log("[DRY] 不发送、不写 pushed；将推送「第二次喊单」：")
+            log("[DRY] 不发送、不写 pushed；将推送「第三次喊单」：")
             print(msg, flush=True)
             continue
         try:
@@ -533,7 +533,7 @@ def main():
             return 1
         pushed.add(k)
         recs.pop(k, None)
-        log("TG 推送成功 msg_id={} | {} {} {}（第二次喊单）".format(
+        log("TG 推送成功 msg_id={} | {} {} {}（第三次喊单）".format(
             msg_id, it["chain"], it["address"], it["symbol"]))
 
     if DRY_RUN:
