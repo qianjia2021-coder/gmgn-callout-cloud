@@ -83,6 +83,7 @@
   "elysium:0xa3c1d6a8648df3978a38ce1478fbc284c75d95d7",
   "elysium:0xa713a15b85cab304f9e2fbc649440b5e3ab8a8d4",
   "elysium:0xd37cf8b25b117e4630c0eb40a5b1e3b2ab4d100f",
+  "elysium:0xe19ab007f4252deee3cda8fdbf2d7654c4c5c237",
   "elysium:0xec60e2eb9c8f2dddabd55b9799e691beea6da768",
   "elysium:0xf3aa02bb4299ec5092c059bf8baed5942b4a09ed",
   "eth:0x038cf8275b0c5e6d484849b0261f1fe0bc313d8f",
@@ -3734,14 +3735,6 @@
    ],
    "t": 1795456400.4237254
   },
-  "elysium:0xe19ab007f4252deee3cda8fdbf2d7654c4c5c237": {
-   "s": [
-    "01M84S5CJY6NMGJRYFSSDB166R",
-    "01M84VYCR98EPGBWJ8X8MTXW62",
-    "01M84YFMYSZP3NT2P5KEZE15AX"
-   ],
-   "t": 1795462799.3505058
-  },
   "sol:6tccpic2ibowhehh1xygudikimhd1zjizgrghaxbwexe": {
    "s": [
     "01M84S0GY98GQ3KZHEV3Y425JG",
@@ -4023,5 +4016,5 @@
    "t": 1795462799.3505058
   }
  },
- "updated": 1795462799
+ "updated": 1795462805
 }
