@@ -2504,7 +2504,7 @@
     "01M82GM53H3TASFA8T96FZ35FC",
     "01M83K1XK6SBRZZ83AJPHH0EW9"
    ],
-   "t": 1795416981.4711099
+   "t": 1795417021.5008585
   },
   "robinhood:0xa2052df94c96a165389300f1900de7d392d97f88": {
    "s": [
@@ -3812,7 +3812,13 @@
     "01M83JT5SARHXEFTTEMMNZPF33"
    ],
    "t": 1795416940.6367
+  },
+  "sol:dgjukupajrhtjlccpnfurbefk27v5gcrevu6deyvpump": {
+   "s": [
+    "01M83K2RV8RRYV0T7FDAHQQKD6"
+   ],
+   "t": 1795417021.5008585
   }
  },
- "updated": 1795416981
+ "updated": 1795417049
 }
