@@ -326,6 +326,7 @@
   "robinhood:0xe0bcf5d80435781aae7f6dcde202bb1ccb9c7d89",
   "robinhood:0xe23ebceec39212a49159a1add7610b0bd7ad317c",
   "robinhood:0xe4119a9bfcc86915368502b598bbed4745f7051d",
+  "robinhood:0xe4fbe06adf96de53db2c7aad6e92a84543077fcb",
   "robinhood:0xe8d6ae09757769968d17eab44998a03e196217e7",
   "robinhood:0xe92b50237988dd6fb5a4edc472e19eedfc8ce0c7",
   "robinhood:0xea2576476c74c6903ae263e098866e04078f4bc1",
@@ -4280,14 +4281,6 @@
    ],
    "t": 1795633304.7344568
   },
-  "robinhood:0xe4fbe06adf96de53db2c7aad6e92a84543077fcb": {
-   "s": [
-    "01M8A1MA0K2TSN1XVV2KQG8B1Q",
-    "01M8A1M1NRRJ3FKHF6D1K1Z3SZ",
-    "01M8A1KRHNF484Z3DP6EQK8BJX"
-   ],
-   "t": 1795633608.6912963
-  },
   "elysium:0x7f4f3b9770648262fe5133b9cb8a2155173be0d4": {
    "s": [
     "01M8A1JHXBPK3AH9RTPC7MQ0GA"
@@ -4319,5 +4312,5 @@
    "t": 1795633608.6912963
   }
  },
- "updated": 1795633608
+ "updated": 1795633612
 }
