@@ -4550,20 +4550,26 @@
    "s": [
     "01M8AQ82RTXKMRNH8N1DYMEA2M"
    ],
-   "t": 1795656514.9650612
+   "t": 1795656579.96274
   },
   "sol:31gfcv6vxueupx4ckrzkxd8wccaodhynes3ckhrppump": {
    "s": [
     "01M8AQD4QPE7WGJFM2CWV84JB7"
    ],
-   "t": 1795656514.9650612
+   "t": 1795656670.7495725
   },
   "sol:baijhvuihcocxapyyaunz5g6lnizzxvyohwdmarqtwtw": {
    "s": [
     "01M8AQFVJMMZR74QZ26Y9J1795"
    ],
-   "t": 1795656514.9650612
+   "t": 1795656670.7495725
+  },
+  "elysium:0x36a6031912dee000f4fac4af902d2d06ac0aae50": {
+   "s": [
+    "01M8AQM8DC8QBXR6RKEE29XGRC"
+   ],
+   "t": 1795656670.7495725
   }
  },
- "updated": 1795656565
+ "updated": 1795656696
 }
